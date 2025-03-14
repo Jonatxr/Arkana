@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        APP_VERSION = '1.0'  // Modifie cette version à chaque nouvelle version de ton app
+        APP_VERSION = '1.0'  // Change cette valeur à chaque nouvelle version de l'application
     }
 
     stages {
@@ -29,18 +29,14 @@ pipeline {
 
         stage('Archivage ZIP') {
             steps {
-                archiveArtifacts artifacts: "Arkana_v${env.APP_VERSION}.zip", fingerprint: true
+                archiveArtifacts artifacts: "Arkana_v${env.APP_VERSION}_${env.BUILD_NUMBER}.zip", fingerprint: true
             }
         }
     }
 
-    environment {
-        APP_VERSION = '1.0'  // Change cette valeur manuellement à chaque nouvelle version de l'application
-    }
-
     post {
         success {
-            echo "Build réussi : Arkana version ${env.APP_VERSION}, Build #${env.BUILD_NUMBER}"
+            echo "✅ Build réussi : Arkana version ${env.APP_VERSION}, Build #${env.BUILD_NUMBER}"
         }
     }
 }
