@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        APP_VERSION = '1.0'  // Change cette valeur à chaque nouvelle version de l'application
+        APP_VERSION = '1.0'
         ZIP_NAME = "Arkana_v${env.APP_VERSION}_${env.BUILD_NUMBER}.zip"
     }
 
@@ -22,38 +22,30 @@ pipeline {
         stage('Préparation (ZIP)') {
             steps {
                 sh """
-                # Vérifier où se trouve zip
                 echo \"📂 Localisation de zip :\"
                 which zip || { echo \"❌ zip n'est pas installé !\"; exit 1; }
 
-                # Vérifier l'accès à /srv/
                 if [ ! -w /srv/ ]; then
                     echo \"❌ Erreur : Jenkins n'a pas les permissions en écriture sur /srv/\"
                     exit 1
                 fi
 
-                # Supprimer les anciens ZIP (si /srv/ accessible)
-                sudo find /srv/ -name 'Arkana_v*.zip' -type f -mtime +15 -delete
+                # Supprimer les anciens ZIP (sans attendre de mot de passe)
+                sudo -n find /srv/ -name 'Arkana_v*.zip' -type f -mtime +15 -delete || echo \"⚠ Impossible de nettoyer /srv/\"
 
                 # Création de l'archive ZIP
                 zip -r ${ZIP_NAME} . -x \"*.git*\" -x \"venv/*\"
 
-                # Vérifier que le fichier ZIP a bien été créé
                 if [ ! -f ${ZIP_NAME} ]; then
-                    echo \"❌ Erreur : L'archive ZIP n'a pas été créée correctement !\"
+                    echo \"❌ Erreur : L'archive ZIP n'a pas été créée !\"
                     exit 1
                 fi
 
-                # Afficher la taille du fichier ZIP
                 ls -lh ${ZIP_NAME}
 
-                # Déplacer l'archive dans /srv/ avec gestion d'erreur
-                if sudo cp ${ZIP_NAME} /srv/; then
-                    echo \"✅ ZIP déplacé avec succès dans /srv/\"
-                else
-                    echo \"❌ Échec du déplacement du ZIP !\"
-                    exit 1
-                fi
+                # Déplacer l'archive sans demande de mot de passe
+                sudo -n cp ${ZIP_NAME} /srv/ || { echo \"❌ Erreur de copie vers /srv/\"; exit 1; }
+                echo \"✅ ZIP déplacé avec succès dans /srv/\"
                 """
             }
         }
