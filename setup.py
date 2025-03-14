@@ -1,8 +1,8 @@
 from setuptools import setup
 
 setup(
-    name='my-python-app',
-    version='0.1',
+    name='Arkana',
+    version='1.0',
     py_modules=['app'],
     install_requires=['requests'],
 )

@@ -1,31 +1,35 @@
 pipeline {
   agent any
-  
+
   stages {
-    stage('Checkout') {
+
+    stage('Clone Git Repo') {
       steps {
-        git branch: 'main', url: 'https://github.com/Jonatxr/Arkana.git'
+        sshagent(['git-ssh-key']) {
+          git 'git@github.com:jonatxr/Arkana.git'
+        }
       }
     }
-    
-    stage('Build Python App') {
+
+    stage('Build .exe with PyInstaller') {
       steps {
         sh '''
           python3 -m venv venv
           source venv/bin/activate
+          pip install --upgrade pip
           pip install -r requirements.txt
-          python setup.py build
-          python setup.py sdist
+
+          # Générer l'exécutable Windows (.exe)
+          pyinstaller --onefile --windowed app.py
         '''
       }
     }
-    
-    stage('Livraison Artefact') {
+
+    stage('Livrer Artefact') {
       steps {
-        sshagent(['ssh-credential']) {
-          sh 'scp dist/*.tar.gz jonathan@192.168.1.2000:/apps/Arkana/'
-        }
+        archiveArtifacts artifacts: 'dist/*.exe', fingerprint: true
       }
     }
+
   }
 }
