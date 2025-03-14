@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Repo') {
             steps {
                 sshagent(['github-ssh-key']) {
-                    git 'git@github.com:Jonatxr/Arkana.git'
+                    git branch: 'main', url: 'git@github.com:Jonatxr/Arkana.git'
                 }
             }
         }
@@ -22,7 +22,7 @@ pipeline {
             }
         }
 
-        stage('Archivage Artefact EXE') {
+        stage('Archive EXE') {
             steps {
                 archiveArtifacts artifacts: 'dist/*.exe', fingerprint: true
             }
