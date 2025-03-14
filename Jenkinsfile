@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     stages {
-        stage('Checkout Repo') {
+        stage('Checkout') {
             steps {
                 sshagent(['github-ssh-key']) {
                     git branch: 'main', url: 'git@github.com:Jonatxr/Arkana.git'
@@ -10,21 +10,17 @@ pipeline {
             }
         }
 
-        stage('Build EXE with PyInstaller') {
+        stage('Préparation (ZIP)') {
             steps {
                 sh '''
-                python3 -m venv venv
-                . venv/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
-                pyinstaller --onefile app.py --name Arkana
+                zip -r Arkana.zip . -x "*.git*" -x "venv/*"
                 '''
             }
         }
 
-        stage('Archive EXE') {
+        stage('Archivage ZIP') {
             steps {
-                archiveArtifacts artifacts: 'dist/Arkana', fingerprint: true
+                archiveArtifacts artifacts: 'Arkana.zip', fingerprint: true
             }
         }
     }
