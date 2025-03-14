@@ -17,7 +17,7 @@ pipeline {
                 . venv/bin/activate
                 pip install --upgrade pip
                 pip install -r requirements.txt
-                wine venv/bin/pyinstaller --onefile app.py --name Arkana
+                pyinstaller --onefile app.py --name Arkana
                 '''
             }
         }
