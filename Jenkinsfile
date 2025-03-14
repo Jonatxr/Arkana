@@ -24,7 +24,7 @@ pipeline {
 
         stage('Archive EXE') {
             steps {
-                archiveArtifacts artifacts: 'dist/*.exe', fingerprint: true
+                archiveArtifacts artifacts: 'dist/Arkana', fingerprint: true
             }
         }
     }
