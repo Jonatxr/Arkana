@@ -22,15 +22,13 @@ pipeline {
         stage('Préparation (ZIP)') {
             steps {
                 sh """
-                # Vérifier si zip est installé
-                if ! command -v zip &> /dev/null; then
-                    echo "❌ Erreur : zip n'est pas installé !"
-                    exit 1
-                fi
+                # Vérifier où se trouve zip
+                echo \"📂 Localisation de zip :\"
+                which zip || { echo \"❌ zip n'est pas installé !\"; exit 1; }
 
                 # Vérifier l'accès à /srv/
                 if [ ! -w /srv/ ]; then
-                    echo "❌ Erreur : Jenkins n'a pas les permissions en écriture sur /srv/"
+                    echo \"❌ Erreur : Jenkins n'a pas les permissions en écriture sur /srv/\"
                     exit 1
                 fi
 
@@ -38,11 +36,11 @@ pipeline {
                 sudo find /srv/ -name 'Arkana_v*.zip' -type f -mtime +15 -delete
 
                 # Création de l'archive ZIP
-                zip -r ${ZIP_NAME} . -x "*.git*" -x "venv/*"
+                zip -r ${ZIP_NAME} . -x \"*.git*\" -x \"venv/*\"
 
                 # Vérifier que le fichier ZIP a bien été créé
                 if [ ! -f ${ZIP_NAME} ]; then
-                    echo "❌ Erreur : L'archive ZIP n'a pas été créée correctement !"
+                    echo \"❌ Erreur : L'archive ZIP n'a pas été créée correctement !\"
                     exit 1
                 fi
 
@@ -51,9 +49,9 @@ pipeline {
 
                 # Déplacer l'archive dans /srv/ avec gestion d'erreur
                 if sudo cp ${ZIP_NAME} /srv/; then
-                    echo "✅ ZIP déplacé avec succès dans /srv/"
+                    echo \"✅ ZIP déplacé avec succès dans /srv/\"
                 else
-                    echo "❌ Échec du déplacement du ZIP !"
+                    echo \"❌ Échec du déplacement du ZIP !\"
                     exit 1
                 fi
                 """
