@@ -1,9 +1,11 @@
-import requests
+import os
+import sys
 
-def main():
-    print("✨ Mini Dofus App - Jenkins Build Test 🚀")
-    response = requests.get("https://httpbin.org/get")
-    print("Status HTTP de test :", response.status_code)
+# Ajouter le dossier launcher au PATH pour importer les scripts
+sys.path.append(os.path.join(os.path.dirname(__file__), "launcher"))
 
-if __name__ == "__main__":
-    main()
+# Importer et exécuter le script de lancement
+from start_dofus import subprocess
+
+print("[INFO] Démarrage de l’application...")
+subprocess.run(["python", "launcher/start_dofus.py"])
