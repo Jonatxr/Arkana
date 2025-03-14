@@ -18,9 +18,18 @@ pipeline {
             }
         }
 
+        stage('Déplacer ZIP vers /srv') {
+            steps {
+                sh '''
+                sudo mv Arkana.zip /srv/Arkana.zip
+                sudo chmod 644 /srv/Arkana.zip
+                '''
+            }
+        }
+
         stage('Archivage ZIP') {
             steps {
-                archiveArtifacts artifacts: 'Arkana.zip', fingerprint: true
+                archiveArtifacts artifacts: '/srv/Arkana.zip', fingerprint: true
             }
         }
     }
