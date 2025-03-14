@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                sshagent(['git-ssh-key']) {
+                sshagent(['github-ssh-key']) {
                     git 'git@github.com:Jonatxr/Arkana.git'
                 }
             }
