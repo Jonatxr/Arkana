@@ -29,8 +29,9 @@ pipeline {
                     echo "[INFO] Création de l'environnement virtuel..."
                     sh """
                         python3 -m venv ${VENV_DIR}
-                        . ${VENV_DIR}/bin/activate && pip install --upgrade pip setuptools wheel
-                        . ${VENV_DIR}/bin/activate && pip install -r requirements.txt
+                        . ${VENV_DIR}/bin/activate
+                        pip install --upgrade pip setuptools wheel
+                        pip install -r requirements.txt pytest flake8
                     """
                 }
             }
@@ -41,7 +42,8 @@ pipeline {
                 script {
                     echo "[INFO] Exécution des tests avec pytest..."
                     sh """
-                        . ${VENV_DIR}/bin/activate && pytest tests/ || echo '[WARNING] Certains tests ont échoué !'
+                        . ${VENV_DIR}/bin/activate
+                        pytest tests/ || echo '[WARNING] Certains tests ont échoué !'
                     """
                 }
             }
@@ -52,7 +54,8 @@ pipeline {
                 script {
                     echo "[INFO] Vérification du code avec flake8..."
                     sh """
-                        . ${VENV_DIR}/bin/activate && flake8 --max-line-length=120 launcher/ app.py || echo '[WARNING] Flake8 a détecté des problèmes !'
+                        . ${VENV_DIR}/bin/activate
+                        flake8 --max-line-length=120 launcher/ app.py || echo '[WARNING] Flake8 a détecté des problèmes !'
                     """
                 }
             }
@@ -62,7 +65,12 @@ pipeline {
             steps {
                 script {
                     echo "[INFO] Vérification si zip est installé..."
-                    sh "command -v zip >/dev/null 2>&1 || { echo '[ERROR] zip n'est pas installé !'; exit 1; }"
+                    sh """
+                        if ! command -v zip &> /dev/null; then
+                            echo '[ERROR] zip n'est pas installé !'
+                            exit 1
+                        fi
+                    """
 
                     echo "[INFO] Suppression des anciens fichiers ZIP..."
                     sh "sudo find /srv/ -name 'Arkana_v*.zip' -type f -mtime +15 -delete"
