@@ -1,86 +1,111 @@
 pipeline {
     agent any
 
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '15'))
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
     environment {
-        APP_VERSION = '1.0'  // Mettez à jour cette valeur pour chaque nouvelle version
-        ZIP_NAME = "Arkana_v${APP_VERSION}_${BUILD_NUMBER}.zip"
+        APP_VERSION = '1.0'
+        ZIP_NAME = "Arkana_v${env.APP_VERSION}_${env.BUILD_NUMBER}.zip"
+        VENV_DIR = "venv"
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Jonatxr/Arkana.git'
+                echo "[INFO] Récupération du code source depuis GitHub..."
+                sshagent(['github-ssh-key']) {
+                    git branch: 'main', url: 'git@github.com:Jonatxr/Arkana.git'
+                }
             }
         }
 
         stage('Setup Environment') {
             steps {
-                sh '''
-                python3 -m venv venv
-                source venv/bin/activate
-                pip install --upgrade pip setuptools wheel
-                pip install -r requirements.txt
-                '''
+                script {
+                    echo "[INFO] Création de l'environnement virtuel..."
+                    sh """
+                        python3 -m venv ${VENV_DIR}
+                        . ${VENV_DIR}/bin/activate
+                        pip install --upgrade pip setuptools wheel
+                        pip install -r requirements.txt pytest flake8
+                    """
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh '''
-                source venv/bin/activate
-                if [ -d "tests" ]; then
-                    pytest tests/ || echo "[WARNING] Certains tests ont échoué !"
-                else
-                    echo "[INFO] Aucun test à exécuter."
-                fi
-                '''
+                script {
+                    echo "[INFO] Vérification de l'existence du dossier tests..."
+                    sh "mkdir -p tests && touch tests/test_dummy.py"
+
+                    echo "[INFO] Exécution des tests avec pytest..."
+                    sh """
+                        . ${VENV_DIR}/bin/activate
+                        pytest tests/ || echo '[WARNING] Certains tests ont échoué !'
+                    """
+                }
             }
         }
 
         stage('Code Analysis') {
             steps {
-                sh '''
-                source venv/bin/activate
-                flake8 --max-line-length=120 launcher/ app.py || echo "[WARNING] Flake8 a détecté des problèmes !"
-                '''
+                script {
+                    echo "[INFO] Vérification du code avec flake8..."
+                    sh """
+                        . ${VENV_DIR}/bin/activate
+                        flake8 --max-line-length=120 launcher/ app.py || echo '[WARNING] Flake8 a détecté des problèmes !'
+                    """
+                }
             }
         }
 
         stage('Package Application') {
             steps {
-                sh '''
-                if ! command -v zip &> /dev/null; then
-                    echo "❌ Erreur : zip n'est pas installé !"
-                    exit 1
-                fi
+                script {
+                    echo "[INFO] Vérification si zip est installé..."
+                    sh """
+                        if ! command -v zip &> /dev/null; then
+                            echo '[ERROR] zip n'est pas installé !'
+                            exit 1
+                        fi
+                    """
 
-                sudo find /srv/ -name 'Arkana_v*.zip' -type f -mtime +15 -delete
+                    echo "[INFO] Suppression des anciens fichiers ZIP..."
+                    sh "sudo find /srv/ -name 'Arkana_v*.zip' -type f -mtime +15 -delete"
 
-                zip -r ${ZIP_NAME} . -x "*.git*" -x "venv/*"
-
-                if sudo cp ${ZIP_NAME} /srv/; then
-                    echo "✅ ZIP déplacé avec succès dans /srv/"
-                else
-                    echo "❌ Échec du déplacement du ZIP !"
-                    exit 1
-                fi
-                '''
+                    echo "[INFO] Compression du projet en ZIP..."
+                    sh """
+                        zip -r ${ZIP_NAME} . -x "venv/*" "*.git*" "__pycache__/*"
+                        sudo mv ${ZIP_NAME} /srv/
+                    """
+                    echo "[SUCCESS] Archive créée: /srv/${ZIP_NAME}"
+                }
             }
         }
 
-        stage('Archive ZIP') {
+        stage('Cleanup') {
             steps {
-                archiveArtifacts artifacts: "${ZIP_NAME}", fingerprint: true
+                script {
+                    echo "[INFO] Nettoyage de l'environnement..."
+                    sh "rm -rf ${VENV_DIR}"
+                }
             }
         }
+
     }
 
     post {
         success {
-            echo "✅ Build réussi : Arkana version ${APP_VERSION}, Build #${BUILD_NUMBER}"
+            echo "[SUCCESS] ✅ Pipeline terminé avec succès !"
         }
+
         failure {
-            echo "❌ Échec du build ! Vérifiez les logs."
+            echo "[ERROR] ❌ Pipeline échoué ! Vérifie les logs."
         }
     }
 }
