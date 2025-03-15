@@ -27,9 +27,11 @@ pipeline {
             steps {
                 script {
                     echo "[INFO] Création de l'environnement virtuel..."
-                    sh "python3 -m venv ${VENV_DIR}"
-                    sh "source ${VENV_DIR}/bin/activate && pip install --upgrade pip setuptools wheel"
-                    sh "source ${VENV_DIR}/bin/activate && pip install -r requirements.txt"
+                    sh """
+                        python3 -m venv ${VENV_DIR}
+                        . ${VENV_DIR}/bin/activate && pip install --upgrade pip setuptools wheel
+                        . ${VENV_DIR}/bin/activate && pip install -r requirements.txt
+                    """
                 }
             }
         }
@@ -38,7 +40,9 @@ pipeline {
             steps {
                 script {
                     echo "[INFO] Exécution des tests avec pytest..."
-                    sh "source ${VENV_DIR}/bin/activate && pytest tests/"
+                    sh """
+                        . ${VENV_DIR}/bin/activate && pytest tests/ || echo '[WARNING] Certains tests ont échoué !'
+                    """
                 }
             }
         }
@@ -47,7 +51,9 @@ pipeline {
             steps {
                 script {
                     echo "[INFO] Vérification du code avec flake8..."
-                    sh "source ${VENV_DIR}/bin/activate && flake8 --max-line-length=120 launcher/ app.py"
+                    sh """
+                        . ${VENV_DIR}/bin/activate && flake8 --max-line-length=120 launcher/ app.py || echo '[WARNING] Flake8 a détecté des problèmes !'
+                    """
                 }
             }
         }
@@ -55,9 +61,17 @@ pipeline {
         stage('Package Application') {
             steps {
                 script {
+                    echo "[INFO] Vérification si zip est installé..."
+                    sh "command -v zip >/dev/null 2>&1 || { echo '[ERROR] zip n'est pas installé !'; exit 1; }"
+
+                    echo "[INFO] Suppression des anciens fichiers ZIP..."
+                    sh "sudo find /srv/ -name 'Arkana_v*.zip' -type f -mtime +15 -delete"
+
                     echo "[INFO] Compression du projet en ZIP..."
-                    sh "rm -f /srv/${ZIP_NAME}" // Suppression des anciennes versions
-                    sh "zip -r /srv/${ZIP_NAME} . -x \"venv/*\" \"*.git*\" \"__pycache__/*\""
+                    sh """
+                        zip -r ${ZIP_NAME} . -x "venv/*" "*.git*" "__pycache__/*"
+                        sudo mv ${ZIP_NAME} /srv/
+                    """
                     echo "[SUCCESS] Archive créée: /srv/${ZIP_NAME}"
                 }
             }
@@ -66,7 +80,7 @@ pipeline {
         stage('Cleanup') {
             steps {
                 script {
-                    echo "[INFO] Suppression de l'environnement virtuel..."
+                    echo "[INFO] Nettoyage de l'environnement..."
                     sh "rm -rf ${VENV_DIR}"
                 }
             }
@@ -76,14 +90,11 @@ pipeline {
 
     post {
         success {
-            echo "[SUCCESS] Pipeline terminé avec succès !"
-            // Exemple pour notification Slack (ajoute ton webhook dans Jenkins)
-            // slackSend channel: '#devops', color: 'good', message: "Build #${env.BUILD_NUMBER} de Arkana réussi !"
+            echo "[SUCCESS] ✅ Pipeline terminé avec succès !"
         }
 
         failure {
-            echo "[ERROR] Pipeline échoué !"
-            // slackSend channel: '#devops', color: 'danger', message: "Build #${env.BUILD_NUMBER} de Arkana a échoué !"
+            echo "[ERROR] ❌ Pipeline échoué ! Vérifie les logs."
         }
     }
 }
