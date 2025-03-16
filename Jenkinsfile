@@ -25,7 +25,7 @@ pipeline {
                 echo '[INFO] Configuration de l\'environnement virtuel et installation des dépendances...'
                 sh '''
                     python3 -m venv venv
-                    source venv/bin/activate
+                    . venv/bin/activate
                     pip install -r requirements.txt pytest flake8
                 '''
             }
@@ -35,7 +35,7 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        source venv/bin/activate
+                        . venv/bin/activate
                         pytest tests/ || echo "[WARNING] Certains tests ont échoué !"
                         flake8 . || echo "[WARNING] Flake8 a détecté des problèmes !"
                     '''
