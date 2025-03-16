@@ -46,11 +46,11 @@ pipeline {
         stage('Package Application') {
             steps {
                 script {
-                    sh '''
-                        zip -r Arkana_${BUILD_NUMBER}.zip . -x '*.git*' 'venv/*' 'tests/*'
-                    '''
+                    sh """
+                        zip -r "Arkana_${BUILD_NUMBER}.zip" . -x '*.git*' 'venv/*' 'tests/*'
+                    """
                 }
-                archiveArtifacts artifacts: 'Arkana_${BUILD_NUMBER}.zip', fingerprint: true
+                archiveArtifacts artifacts: "Arkana_${BUILD_NUMBER}.zip", fingerprint: true
             }
         }
 
