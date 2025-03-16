@@ -37,7 +37,7 @@ pipeline {
                     sh '''
                         . venv/bin/activate
                         pytest tests/ || echo "[WARNING] Certains tests ont échoué !"
-                        flake8 . || echo "[WARNING] Flake8 a détecté des problèmes !"
+                        flake8 . --exclude=venv || echo "[WARNING] Flake8 a détecté des problèmes !"
                     '''
                 }
             }
