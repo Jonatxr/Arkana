@@ -9,7 +9,7 @@ set "output_dir=build_%timestamp%"
 
 echo ==========================================
 echo       Création de l'exécutable Arkana
-echo       Build : %output_dir%
+echo       Répertoire : %output_dir%
 echo ==========================================
 echo.
 
@@ -22,28 +22,26 @@ IF ERRORLEVEL 1 (
 ) ELSE (
     echo PyInstaller est déjà installé.
 )
-
 echo.
-REM Création de l'exécutable
+
+REM Création de l'exécutable (prenant en compte launcher.py)
 echo Création de l'exécutable en cours...
-pyinstaller --onefile --windowed app.py
+pyinstaller --onefile --windowed launcher\launcher.py
 
 IF %ERRORLEVEL% EQU 0 (
     REM Création du dossier unique
     mkdir "%output_dir%"
-    move "dist\app.exe" "%output_dir%\Arkana.exe"
+    move "dist\launcher.exe" "%output_dir%\Arkana.exe"
 
     echo.
     echo ==========================================
-    echo   Exécutable créé avec succès dans :
-    echo   %output_dir%
+    echo Exécutable créé avec succès dans :
+    echo %output_dir%
     echo ==========================================
     explorer "%output_dir%"
 ) ELSE (
-    echo.
-    echo ==========================================
-    echo   Erreur lors de la création de l'exe.
-    echo ==========================================
+    echo Erreur lors de la création de l'exécutable.
+    exit /b 1
 )
 
 REM Nettoyage des répertoires PyInstaller

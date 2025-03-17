@@ -26,7 +26,7 @@ pipeline {
                 sh '''
                     python3 -m venv venv
                     . venv/bin/activate
-                    pip install -r requirements.txt pytest flake8
+                    pip install -r requirements.txt pytest flake8 pyinstaller
                 '''
             }
         }
@@ -43,14 +43,28 @@ pipeline {
             }
         }
 
+        stage('Build Executable') {
+            steps {
+                script {
+                    sh '''
+                        . venv/bin/activate
+                        pyinstaller --onefile --windowed launcher/launcher.py
+                    '''
+                }
+            }
+        }
+
         stage('Package Application') {
             steps {
                 script {
-                    sh """
-                        zip -r "Arkana_${BUILD_NUMBER}.zip" . -x '*.git*' 'venv/*' 'tests/*'
-                    """
+                    sh '''
+                        BUILD_DIR="Arkana_Build_${BUILD_NUMBER}"
+                        mkdir -p ${BUILD_DIR}
+                        mv dist/launcher.exe ${BUILD_DIR}/Arkana.exe
+                        zip -r "${BUILD_DIR}.zip" ${BUILD_DIR}
+                    '''
                 }
-                archiveArtifacts artifacts: "Arkana_${BUILD_NUMBER}.zip", fingerprint: true
+                archiveArtifacts artifacts: "Arkana_Build_${BUILD_NUMBER}.zip", fingerprint: true
             }
         }
 
